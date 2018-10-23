@@ -1,0 +1,52 @@
+---
+ - name: Ansible
+   hosts: nginx
+   user: root
+   gather_facts: true
+   vars:
+    - user: "nginx"
+    - nginx_dir: "/usr/local/nginx"
+    - extract_dir: "/root/nginx-1.12.2"
+    - configuration: "/usr/local/nginx/conf/nginx.conf"
+    - IP: "{{ ansible_ens33['ipv4']['address'] }}"
+    - web_dir: "/usr/local/nginx/html"
+    - proxy_ip: "192.168.2.51"
+    - web1_ip: "192.168.2.52"
+    - web2_ip: "192.168.2.53"
+   tasks:
+    - name: create_group
+      group: name={{ user }}
+    - name: create_user
+      user: name={{ user }} shell=/sbin/nologin createhome=no group={{ user }}
+    - yum: name=pcre-devel
+    - yum: name=openssl-devel
+    - yum: name=gcc*
+    - name: extract_nginx
+      unarchive: src=/1801/linux/note/nginx/nginx-1.12.2.tar.gz dest=/root/
+    - name: ./configure
+      command: ./configure --prefix={{ nginx_dir }} --user={{ user }} --group={{ user }} --with-http_stub_status_module  --with-http_ssl_module  --sbin-path=/usr/sbin chdir={{ extract_dir }} 
+    - name: make
+      command: make  chdir={{ extract_dir }}
+    - name: make_install
+      command: make install chdir={{ extract_dir }}
+    - name: Same_Configuration
+      command: sed -i '2c user nginx;' {{ configuration }} 
+
+    - name: proxy_Configuration
+      shell: sed -i "/gzip/a\upstream webs{ server {{ web1_ip }}; server {{ web2_ip }}; }"  {{ configuration }}
+      when: ansible_ens33['ipv4']['address'] == "{{ proxy_ip }}"
+    - name: proxy_Configuration2
+      shell: sed -r -i '45s/root   html;/proxy_pass http:\/\/webs;/'  {{ configuration }}
+      when: ansible_ens33['ipv4']['address'] == "{{ proxy_ip }}"
+    - name: proxy_Configuration3
+      shell: sed  -i '46d'  {{ configuration }}
+      when: ansible_ens33['ipv4']['address'] == "{{ proxy_ip }}"
+    
+    - name: Web1_Configuration
+      shell: echo "this is nginx1" > "{{ web_dir }}"/index.html
+      when: ansible_ens33['ipv4']['address'] == "{{ web1_ip }}"
+
+    - name: Web2_Configuration
+      shell: echo "this is nginx2" > "{{ web_dir }}"/index.html
+      when: ansible_ens33['ipv4']['address'] == "{{ web2_ip }}"
+    - command: nginx
