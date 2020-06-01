@@ -91,8 +91,10 @@
       shell: echo "/root/mysql_start" >> /etc/rc.local
 
 
-    - name: mysql_init_passwd
+    - name: mysql_init_root_passwd
       shell: </dev/urandom tr -dc 0-9-A-Z-a-z|head -c ${1:-16} > {{ MySQL_save_dir }}/mysql_root
+    - name: mysql_init_user_passwd
+      shell: </dev/urandom tr -dc 0-9-A-Z-a-z|head -c ${1:-16} > {{ MySQL_save_dir }}/mysql_user
     - name: mysql_init_passwd
       shell: chmod -R 700 {{ MySQL_save_dir }}
     - name: mysql_root_change_passwd
@@ -112,3 +114,8 @@
       shell: /usr/bin/mysql -u root -p$(cat /data/save/mysql_root) -e"grant all privileges on *.* to 'xge'@'%' identified by '$(cat /data/save/mysql_root)';"
     - name: user_iam
       shell: /usr/bin/mysql -u root -p$(cat /data/save/mysql_root) -e"REVOKE EXECUTE, PROCESS, SHOW DATABASES, CREATE USER, FILE, GRANT OPTION, RELOAD, REPLICATION CLIENT, REPLICATION SLAVE, SHUTDOWN, SUPER, CREATE ROUTINE, ALTER ROUTINE ON *.* FROM 'xge'@'%';"
+## Create DB
+    - name: Create_DB
+      shell: /usr/bin/mysql -u root -p$(cat /data/save/mysql_root) -e"create database {{ MySQL_DB }};"
+    - name: Create_User
+      shell: /usr/bin/mysql -u root -p$(cat /data/save/mysql_root) -e"grant all privileges on {{ MySQL_DB }}.* to '{{ MySQL_DBUser }}'@'{{ MySQL_DBhosts }}'  IDENTIFIED BY '$(cat /data/save/mysql_user)';"
