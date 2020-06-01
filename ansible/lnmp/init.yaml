@@ -1,0 +1,130 @@
+---
+ - name: Init
+   hosts: all
+   user: root
+   tags: Init
+   gather_facts: true
+   vars_files: 
+    - var.yaml
+   tasks: 
+    - name: init_start_time
+      shell: echo "init start `date`" > /tmp/time.txt
+#    - yum: name="autoconf,bzip2,bzip2-devel,cmake,curl,curl-devel,e2fsprogs,e2fsprogs-devel,freetype,freetype-devel,gcc,gcc-c++,git,glibc,glibc-devel,gmp,gmp-devel,krb5-devel,libcurl,libcurl-devel,libidn,libidn-devel,libjpeg,libjpeg-devel,libmcrypt,libmcrypt-devel,libpng,libpng-devel,libtool-ltdl-devel,libxml2,libxml2-devel,libxslt,libxslt-devel,lrzsz,mysql-devel,ncurses,ncurses-devel,ntp,openldap,openldap-clients,openldap-devel,openldap-servers,openssl,openssl-devel,perl-CPAN,readline,readline-devel,screen,svn,unixODBC,unixODBC-devel,unzip"
+
+    - name: DNS_check
+      shell:  host www.sina.com.cn ; echo $?
+      register: result
+      ignore_errors: True
+    - name: change_DNS
+      shell:  echo "DNS解析无问题"  >> /root/result.txt
+      when: result.stdout_lines[-1] == '0'
+    - name: change_DNS
+      shell:  echo "DNS解析失效"  >> /root/result.txt
+      when: result.stdout_lines[-1] != '0'
+
+
+    - name: change_host
+      shell: ping -f -c 1 10.133.193.110  ; echo $?
+      register: ping_result
+      ignore_errors: True
+    - name: change_DNS
+      shell:  echo "10.133.193.110              center.fswy.com" >> /etc/hosts
+      when: ping_result.stdout_lines[-1] == '0'
+    - name: change_DNS
+      shell:  echo "182.254.155.64                center.fswy.com" >> /etc/hosts
+      when: ping_result.stdout_lines[-1] != '0'
+
+    - name: show_disk_space
+      debug: msg={{ ping_result }}
+
+
+    - name: safe_rm_dir
+      file: path={{ Init_safe_rm_tar_xf_dir }} state=directory 
+    - name: safe_rm_tar_xf
+      unarchive: src={{ Init_file }}/{{ Init_safe_rm_packName }} dest={{ Init_safe_rm_tar_xf_dir }}
+    - name: mv_safe_rm
+      shell: mv {{ Init_safe_rm_tar_xf_dir }}/safe-rm-{{ Init_safe_rm_version }}/safe-rm /usr/local/bin/rm && \
+             echo "/" >> /etc/safe-rm.conf && \
+             echo "/boot" >> /etc/safe-rm.conf
+
+    - name: mkdir_ssh_dir
+      file: path={{  Init_SSH }} state=directory
+    - name: copy_authorized_keys
+      copy: src={{ Init_file }}/authorized_keys dest={{ Init_SSH }} force=yes
+    - name: chmod_ssh
+      shell: chmod -R 700 /root/.ssh/
+
+
+    - name: stop_selinux
+      shell: setenforce 0
+      ignore_errors: True
+#&& sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config && echo "start1 `date`" > /tmp/time.txt
+    - name: stop_selinux
+      shell: sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config 
+
+    - name: stop_firewalld
+      shell: systemctl stop firewalld.service && systemctl disable firewalld.service
+    - yum : name="iptables-services"
+    - name: copy_iptables
+      copy: src={{ Init_file | quote  }}/iptables dest={{ Init_iptables | quote }} force=yes
+    - name: start_iptables
+      shell: systemctl enable iptables && systemctl start iptables
+
+    - name: copy_.bashrc
+      copy: src={{ Init_file | quote  }}/.bashrc dest={{ Init_bashrc | quote }} force=yes
+    - name: change_hostname
+      shell: sed -i '/HOSTNAME/d' /etc/sysconfig/network && \
+             echo "{{ Init_Hostname | quote }}" > /etc/hostname && \ 
+             hostname -F /etc/hostname && \
+             echo "HOSTNAME={{ Init_Hostname | quote }}" >> /etc/sysconfig/network
+
+    - name: time
+      shell: /bin/rm -f /etc/localtime  && \
+             cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime 
+    - name: copy_clock
+      copy: src={{ Init_file | quote  }}/clock dest={{ Init_clock | quote}} force=yes
+
+    - name: add_history_time
+      shell: echo "# add history time" >> /etc/bashrc && \ 
+             echo "export HISTTIMEFORMAT=\"%F %T \"" >> /etc/bashrc
+
+    - name: show_disk_space
+      shell: echo "echo '=========================================================='" >> /root/.bash_profile && \
+             echo "cat /etc/redhat-release" >> /root/.bash_profile && \
+             echo "echo '=========================================================='"  >> /root/.bash_profile && \
+             echo "df -lh" >> /root/.bash_profile && \
+             echo "ulimit -SHn 65535" >> /root/.bash_profile && \
+             echo "stty -ixon" >> /root/.bash_profile   #去掉终端ctrl+s 界面死锁状态
+
+
+### system open file limit ###
+    - name: copy_sysctl.conf
+      copy: src={{ Init_file }}/sysctl.conf  dest=/etc/sysctl.conf force=yes 
+    - name: sysctl_start
+      shell: /sbin/sysctl -p 
+
+    - name: sysctl_start
+      shell: echo '* soft nofile 65535' >> /etc/security/limits.conf && \
+             echo '* hard nofile 65535' >> /etc/security/limits.conf && \
+             echo 'session required /lib64/security/pam_limits.so' >> /etc/pam.d/login && \
+             echo "*          soft    nproc     65535" >> /etc/security/limits.d/90-nproc.conf && \
+             echo "*          hard    nproc     65535" >> /etc/security/limits.d/90-nproc.conf && \
+             echo "ulimit -SHn 65535" >> /root/.bash_profile
+
+    - name: stop_service
+      shell: systemctl stop postfix && \
+             systemctl stop chronyd && \
+             systemctl disable postfix.service && \ 
+             systemctl disable chronyd.service
+    - name: stop_acpid
+      shell: systemctl stop acpid && \
+             systemctl disable acpid.service 
+
+#    - name: ssh_Configuration
+#      shell: sed -i "s#PasswordAuthentication yes#PasswordAuthentication no#g"  /etc/ssh/sshd_config && \
+#             sed -i "s/#Port 22/Port 2020/"  /etc/ssh/sshd_config && \
+#             sed -i 's/GSSAPIAuthentication yes/GSSAPIAuthentication no/' /etc/ssh/sshd_config && \
+#             sed -i 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
+
+    - name: init_stop_time
+      shell: echo "init stop `date`" >> /tmp/time.txt

@@ -1,0 +1,174 @@
+---
+ - name: PHP_install
+   hosts: all
+   user: root
+   tags: PHP
+   gather_facts: true
+   vars_files: 
+    - var.yaml
+   tasks: 
+    - name: create_group
+      group: name={{ user }} 
+
+    - name: create_user
+      user: name={{ user }} shell=/sbin/nologin createhome=no group={{ user }}
+
+    - yum: name="autoconf,bzip2,bzip2-devel,cmake,curl,curl-devel,e2fsprogs,e2fsprogs-devel,freetype,freetype-devel,gcc,gcc-c++,git,glibc,glibc-devel,gmp,gmp-devel,krb5-devel,libcurl,libcurl-devel,libidn,libidn-devel,libjpeg,libjpeg-devel,libmcrypt,libmcrypt-devel,libpng,libpng-devel,libtool-ltdl-devel,libxml2,libxml2-devel,libxslt,libxslt-devel,lrzsz,mysql-devel,ncurses,ncurses-devel,ntp,openldap,openldap-clients,openldap-devel,openldap-servers,openssl,openssl-devel,perl-CPAN,readline,readline-devel,screen,svn,unixODBC,unixODBC-devel,unzip"
+
+    - name: create_dir
+      file: path={{ log_dir }} state=directory owner={{ user }} group={{ group }}
+    - name: create_dir
+      file: path={{ PHP_dir }} state=directory owner={{ user }} group={{ group }}
+    - name: create_dir
+      file: path={{ PHP_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
+    - name: create_dir
+      file: path={{ PHP_conf_dir }} state=directory owner={{ user }} group={{ group }}
+
+    - name: unarchive_tar
+      unarchive: src={{ PHP_pack }}/{{ PHP_packName }} dest={{ PHP_tar_xf_dir }}
+
+
+    - name: configure
+      command: ./configure --prefix={{ PHP_dir }} \ 
+                --with-config-file-path={{ PHP_conf_dir }} \
+                --enable-fpm  \
+                --with-fpm-user={{ user }} \
+                --with-fpm-group={{ group }} \
+                --enable-inline-optimization \
+                --disable-debug \
+                --disable-rpath \
+                --enable-shared \
+                --enable-soap \
+                --with-libxml-dir \
+                --with-xmlrpc \
+                --with-openssl \
+                --with-mcrypt \
+                --with-mhash \
+                --with-pcre-regex \
+                --with-sqlite3 \
+                --with-zlib \
+                --enable-bcmath \
+                --with-iconv --with-bz2 \
+                --enable-calendar --with-curl \
+                --with-cdb --enable-dom \
+                --enable-exif --enable-fileinfo \
+                --enable-filter --with-pcre-dir \
+                --enable-ftp --with-gd --with-openssl-dir \
+                --with-jpeg-dir --with-png-dir --with-zlib-dir \
+                --with-freetype-dir --enable-gd-native-ttf --enable-gd-jis-conv \
+                --with-gettext --with-gmp --with-mhash \
+                --enable-json --enable-mbstring --enable-mbregex \
+                --enable-mbregex-backtrack --with-libmbfl --with-onig \
+                --enable-pdo --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd \
+                --with-zlib-dir --with-pdo-sqlite --with-readline \
+                --enable-session --enable-shmop --enable-simplexml \
+                --enable-sockets  --enable-sysvmsg --enable-sysvsem \
+                --enable-sysvshm --enable-wddx --with-libxml-dir \
+                --with-xsl --enable-zip --enable-mysqlnd-compression-support \
+                --with-pear --enable-opcache  \
+                chdir={{ PHP_tar_xf_dir }}/php-{{ PHP_version }}/
+
+    - name: make
+      command: make -j {{ ansible_processor_vcpus }} chdir={{ PHP_tar_xf_dir }}/php-{{ PHP_version }}/ 
+
+    - name: make_install
+      command: make install -j {{ ansible_processor_vcpus }}  chdir={{ PHP_tar_xf_dir }}/php-{{ PHP_version }}/ 
+
+    - name: Configuration_php.ini
+      command: \cp {{ PHP_tar_xf_dir }}/php-{{ PHP_version }}/php.ini-development {{ PHP_conf_dir }}/php.ini
+
+    - name: Configuration_php-fpm.conf
+      command: \cp {{ PHP_conf_dir }}/php-fpm.conf.default {{ PHP_conf_dir }}/php-fpm.conf
+    - name: Configuration_init_php-fpm
+      command: \cp {{ PHP_tar_xf_dir }}/php-{{ PHP_version }}/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
+    - name: Configuration_www.conf
+      command: \cp {{ PHP_conf_dir }}/php-fpm.d/www.conf.default {{ PHP_conf_dir }}/php-fpm.d/www.conf
+    - name: Configuration_www.conf
+      command: sed -i.bak 's/9000/10080/' {{ PHP_conf_dir }}/php-fpm.d/www.conf
+    - name: Configuration_php.ini
+      command: sed -i.bak 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=1/' {{ PHP_conf_dir }}/php.ini
+
+    - name: php-fpm_start
+      shell: echo "/etc/init.d/php-fpm start" > /root/fastcgi_start && \
+             echo "/etc/init.d/php-fpm stop" > /root/fastcgi_stop && \
+             echo "/etc/init.d/php-fpm restart" > /root/fastcgi_restart && \
+             chmod 700 /root/fastcgi* && \
+             chmod +x /etc/init.d/php-fpm
+
+    - name: php-fpm_autoStart
+      shell: echo "/root/fastcgi_start" >> /etc/rc.local
+
+    #php.ini,php软链接
+    - name: Configuration_php.ini_link
+      file: src={{ PHP_conf_dir }}/php.ini dest=/etc/php.ini state=link
+    - name: Configuration_php_link
+      file: src={{ PHP_bin_dir }}/php dest=/bin/php state=link
+    - name: Configuration_php_link
+      file: src={{ PHP_bin_dir }}/php dest=/usr/bin/php state=link
+
+ - name: Nginx_install
+   hosts: all
+   user: root
+   gather_facts: true
+   tags: nginx
+   vars_files: 
+    - var.yaml
+   tasks: 
+    - name: create_group
+      group: name={{ user }} 
+
+    - name: create_user
+      user: name={{ user }} shell=/sbin/nologin createhome=no group={{ user }}
+#    - yum: name="autoconf,bzip2,bzip2-devel,cmake,curl,curl-devel,e2fsprogs,e2fsprogs-devel,freetype,freetype-devel,gcc,gcc-c++,git,glibc,glibc-devel,gmp,gmp-devel,krb5-devel,libcurl,libcurl-devel,libidn,libidn-devel,libjpeg,libjpeg-devel,libmcrypt,libmcrypt-devel,libpng,libpng-devel,libtool-ltdl-devel,libxml2,libxml2-devel,libxslt,libxslt-devel,lrzsz,mysql-devel,ncurses,ncurses-devel,ntp,openldap,openldap-clients,openldap-devel,openldap-servers,openssl,openssl-devel,perl-CPAN,readline,readline-devel,screen,svn,unixODBC,unixODBC-devel,unzip"
+
+    - name: create_dir
+      file: path={{ Nginx_conf_dir }} state=directory owner={{ user }} group={{ group }}
+    - name: create_dir
+      file: path={{ Nginx_link_conf_dir }} state=directory owner={{ user }} group={{ group }}
+    - name: create_dir
+      file: path={{ Nginx_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
+    - name: create_dir
+      file: path={{ Nginx_link_source }} state=directory owner={{ user }} group={{ group }}
+
+
+    - name: unarchive_tar
+      unarchive: src={{ Nginx_pack }}/nginx-{{ Nginx_version }}.tar.gz dest={{ Nginx_tar_xf_dir }}
+
+    - name: configure
+      command: ./configure --prefix={{ Nginx_dir }} \
+                           --user={{ user }}  \
+                           --group={{ user }} \
+                           --with-http_stub_status_module \
+                           --with-http_stub_status_module \ 
+                           --with-http_ssl_module \ 
+                           chdir={{ Nginx_tar_xf_dir }}/nginx-{{ Nginx_version }}/
+ 
+    - name: make
+      command: make -j {{ ansible_processor_vcpus }} chdir={{ Nginx_tar_xf_dir }}/nginx-{{ Nginx_version }}/ 
+
+    - name: make_install
+      command: make install -j {{ ansible_processor_vcpus }} chdir={{ Nginx_tar_xf_dir }}/nginx-{{ Nginx_version }}/
+
+    - name: Nginx_link
+      file: src={{ Nginx_link_source }} dest={{ Nginx_link_conf_dir }}/vhost state=link
+#      file: src=/usr/local/lib/libpcre.so.1 dest=/lib64/ state=link
+
+    - name: Configuration_nginx.conf
+      copy: src={{ Nginx_pack }}/nginx.conf dest={{ Nginx_master_conf_dir }}/nginx.conf backup=yes force=yes
+    - name: Configuration_nginx_sy.conf
+      copy: src={{ Nginx_pack }}/sy.conf dest={{ Nginx_conf_dir }}/sy.conf backup=yes
+    - name: Configuration_nginx_logrotate
+      copy: src={{ Nginx_pack }}/nginx dest=/etc/logrotate.d/nginx backup=yes
+
+
+    - name: nginx_start
+      shell: ulimit -SHn 65535 && \
+             echo "/data/nginx/sbin/nginx" > /root/nginx_start && \
+             echo "/data/nginx/sbin/nginx -t" > /root/nginx_reload && \
+             echo "/data/nginx/sbin/nginx -s reload" >> /root/nginx_reload && \
+             chmod 700 /root/nginx* && \
+             /data/nginx/sbin/nginx 
+
+    - name: nginx_autoStart
+      shell: echo "/data/nginx/sbin/nginx" >> /etc/rc.local && \
+             chmod +x /etc/rc.d/rc.local

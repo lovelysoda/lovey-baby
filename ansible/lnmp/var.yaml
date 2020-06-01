@@ -1,0 +1,69 @@
+### Public vars ###
+- log_dir: "/data/logs"
+- user: "www"
+- group: "www"
+
+#####################xxx_packName 用于寻找本地tar包 #############################
+#                                                                               #
+#                                                                               #
+#                                                                               #
+#      请填写好 xxx_version  xxx_packName  Init_Hostname                        #
+#                                                                               #
+#                                                                               #
+#                                                                               #
+#                                                                               #
+#################################################################################
+### Nginx install vars ###
+- Nginx_version: "1.17.10"
+- Nginx_dir: "/data/nginx"
+- Nginx_tar_xf_dir: "/usr/local/src/nginx"
+- Nginx_pack: "/etc/ansible/playbooks/package/nginx/file"
+- Nginx_conf_dir: "/data/nginx/conf/vhost"
+- Nginx_master_conf_dir: "/data/nginx/conf"
+- Nginx_link_source: "/data/nginx/conf/vhost"
+- Nginx_link_conf_dir: "/data/conf/nginx"
+
+### PHP install vars ###
+- PHP_version: "7.0.13"
+- PHP_packName: "php7.tar.gz"
+- PHP_tar_xf_dir: "/usr/local/src/php"
+- PHP_dir: "/data/php"
+- PHP_pack: "/etc/ansible/playbooks/package/php/file"
+- PHP_conf_dir: "/data/php/etc"
+- PHP_bin_dir: "/data/php/bin"
+
+### MySQL install vars ###
+- MySQL_version: "5.7.16"
+- MySQL_packName: "mysql-boost-5.7.16.tar.gz"
+- MySQL_user: "mysql"
+- MySQL_group: "mysql"
+- MySQL_data_dir: "/data/mysql"
+- MySQL_binlog_dir: "/data/mysql/3306/binlog"
+- MySQL_relaylog_dir: "/data/mysql/3306/relaylog"
+- MySQL_sock_dir: "/var/lib/mysql"
+- MySQL_pack: "/etc/ansible/playbooks/package/mysql/file"
+- MySQL_tar_xf_dir: "/usr/local/src/mysql"
+- MySQL_save_dir: "/data/save"
+
+
+### Init vars ###
+- Init_Hostname: "129.sksy.com"
+- Init_safe_rm_packName: 'safe-rm-0.8'
+- Init_safe_rm_version: '0.8'
+- Init_SSH: "/root/.ssh"
+- Init_file: "/etc/ansible/playbooks/package/init/file"
+- Init_iptables: "/etc/sysconfig/iptables"
+- Init_bashrc: "/root/.bashrc"
+- Init_clock: "/etc/sysconfig/clock"
+- Init_safe_rm_tar_xf_dir: "/usr/local/src/safe-rm"
+
+### Openssl install vars ###
+- Openssl_file: "/etc/ansible/playbooks/package/erlang/file"
+#- Openssl_tar_xf_dir: "/package/openssl"
+- Openssl_tar_xf_dir: "/usr/local/src/openssl"
+#- Otp_tar_xf_dir: "/package/otp"
+- Otp_tar_xf_dir: "/usr/local/src/otp"
+- Openssl_packName: "openssl-1.0.1j.tar.gz"
+- Openssl_version: "1.0.1j"
+- Otp_packName: "otp_src_20.1.tar.gz"
+- Otp_version: "20.1"

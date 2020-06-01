@@ -1,0 +1,44 @@
+/etc/ansible/playbooks
+├── Ansible-playbook.tar.gz
+├── erlang.yaml
+├── Game_Service_version
+│   └── test.version
+├── init.yaml
+├── LNMP_start.sh
+├── LNMP.yaml
+├── mysql_install.yaml
+├── nginx_php_install.yaml
+├── package
+│   ├── erlang
+│   │   └── file
+│   │       ├── openssl-1.0.1j.tar.gz
+│   │       └── otp_src_20.1.tar.gz
+│   ├── init
+│   │   └── file
+│   │       ├── authorized_keys
+│   │       ├── clock
+│   │       ├── dets.sh
+│   │       ├── iptables
+│   │       ├── libmcrypt-2.5.7.tar.gz
+│   │       ├── LuaJIT.zip
+│   │       ├── safe-rm-0.8.tar.gz
+│   │       ├── servers.sql
+│   │       ├── sy_park.zip
+│   │       └── sysctl.conf
+│   ├── mysql
+│   │   └── file
+│   │       ├── my.cnf
+│   │       ├── mysql-boost-5.7.16.tar.gz
+│   │       └── mysql.sh
+│   ├── nginx
+│   │   └── file
+│   │       ├── nginx
+│   │       ├── nginx-1.17.10.tar.gz
+│   │       ├── nginx.conf
+│   │       └── sy.conf
+│   └── php
+│       └── file
+│           └── php-7.0.13.tar.gz
+└── var.yaml
+
+12 directories, 29 files

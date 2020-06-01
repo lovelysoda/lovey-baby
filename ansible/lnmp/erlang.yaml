@@ -1,0 +1,72 @@
+---
+ - name: Openssl_install
+   hosts: all
+   user: root
+   gather_facts: true
+   tags: erlang
+   vars_files:
+    - var.yaml
+   tasks:
+    - name: create_dir
+      file: path={{ Openssl_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
+    - name: create_dir
+      file: path={{ Otp_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
+
+    - name: openssl_tar_xf
+      unarchive: src={{ Openssl_file }}/{{ Openssl_packName }} dest={{ Openssl_tar_xf_dir }}
+    - name: otp_tar_xf
+      unarchive: src={{ Openssl_file }}/{{ Otp_packName }}.tar.gz dest={{ Otp_tar_xf_dir }}
+### Openssl ###
+    - name: config_openssl
+      shell: |
+        ./config --prefix=/usr  \
+        --openssldir=/etc/ssl \
+        --libdir=lib shared zlib-dynamic  \ #&&  make && make install 
+        chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+   
+    - name: make_openssl
+      shell: |
+        make  chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+   
+    - name: make_install_openssl
+      shell: |
+        make install chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+   
+    - name: make_clean
+      shell: make clean chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+   
+    - name: config_openssl_ERLANG
+      shell: ./config --prefix=/usr/local/ssl chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+   
+    - name: change_openssl_ERLANG
+      shell: sed -i 's/DGHASH_ASM/DGHASH_ASM -fPIC/' Makefile  chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+   
+    - name: make_openssl_ERLANG
+      shell: make chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+   
+    - name: make_install_openssl_ERLANG
+      shell: make install chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+   
+   ### Otp ###
+    - name: config_Otp
+      shell: CHOST="x86_64-pc-linux-gnu" CFLAGS="-march=nocona -O2 -pipe" CXXFLAGS="-march=nocona -O2 -pipe" chdir={{ Otp_tar_xf_dir }}/{{ Otp_packName }}/
+   
+    - name: config_otp
+      shell: ./configure --enable-kernel-poll \ 
+                         --enable-threads     \
+                         --enable-smp-support \
+                         --enable-hipe        \
+                         --with-ssl=/usr/local/ssl/ \
+                         chdir={{ Otp_tar_xf_dir }}/{{ Otp_packName }}/
+   
+    
+    - name: make_otp
+      shell: make -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/{{ Otp_packName }}/
+    
+    - name: make_install_otp
+      shell: make install -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/{{ Otp_packName }}/
+   
+    - name: change_php.ini
+      shell: sed -i '736 i extension_dir = "/data/php/lib/php/extensions/no-debug-non-zts-20151012"' /data/php/etc/php.ini && \
+             sed -i 's/;date.timezone =/date.timezone = PRC/' /data/php/etc/php.ini && \
+             sed -i 's/short_open_tag = Off/short_open_tag = On/' /data/php/etc/php.ini 
