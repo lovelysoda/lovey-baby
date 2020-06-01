@@ -32,25 +32,20 @@ systemctl disable firewalld
 setenforce 0
 sed -r -i '/^SELINUX=/s/(.*)([\=])(.*)/\1\2disabled/' /etc/selinux/config
 #vim编辑器tab宽度设置
-which vim
-[ $? -eq 0 ]&&echo set ts=4 >>/etc/vimrc
+echo set ts=4 >>/etc/vimrc
 #修改时区
 rm -rf /etc/localtime
 ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 #修改主机名
 hostname $1
 echo $1.localdomain > /etc/hostname
-#最小化tab自动补全代码
-yum install bash-completion -y
-#netstat
-yum install net-tools  -y
 #修改ip地址
-rm -rf /etc/sysconfig/network-scripts/ifcfg-eth0
-cat>>/etc/sysconfig/network-scripts/ifcfg-eth0<<eof
+rm -rf /etc/sysconfig/network-scripts/ifcfg-ens33
+cat>>/etc/sysconfig/network-scripts/ifcfg-ens33<<eof
 TYPE=Ethernet
 BOOTPROTO=static
-DEVICE=eth0
+DEVICE=ens33
 ONBOOT=yes
 IPADDR=$2
 eof
-ifdown eth0;ifup eth0
+ifdown ens33;ifup ens33
