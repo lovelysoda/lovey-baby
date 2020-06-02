@@ -394,7 +394,7 @@
       shell: chown -R mysql:mysql {{ MySQL_sock_dir }}
 
     - name: 创建MySQL-sock软链接
-      shell: ln -s /tmp/mysql.sock /var/lib/mysql/mysql.sock
+      shell: ln -sf /tmp/mysql.sock /var/lib/mysql/mysql.sock
 
     - name: 创建MySQL启动脚本
       shell: echo "/data/mysql/3306/mysql start" > /root/mysql_start
