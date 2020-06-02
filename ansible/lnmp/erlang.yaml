@@ -1,5 +1,5 @@
 ---
- - name: Openssl_install
+ - name: Erlang安装
    hosts: all
    user: root
    gather_facts: true
@@ -7,15 +7,15 @@
    vars_files:
     - var.yaml
    tasks:
-    - name: create_dir
+    - name: 创建Openssl解压目录
       file: path={{ Openssl_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
-    - name: create_dir
+    - name: 创建Otp解压目录
       file: path={{ Otp_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
 
-    - name: openssl_tar_xf
+    - name: 解压openssl文件至目标主机
       unarchive: src={{ Openssl_file }}/{{ Openssl_packName }} dest={{ Openssl_tar_xf_dir }}
-    - name: otp_tar_xf
-      unarchive: src={{ Openssl_file }}/{{ Otp_packName }}.tar.gz dest={{ Otp_tar_xf_dir }}
+    - name: 解压otp文件至目标主机
+      unarchive: src={{ Openssl_file }}/{{ Otp_packName }} dest={{ Otp_tar_xf_dir }}
 ### Openssl ###
     - name: config_openssl
       shell: |
@@ -35,21 +35,21 @@
     - name: make_clean
       shell: make clean chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
    
-    - name: config_openssl_ERLANG
+    - name: config_openssl_ERLANG环境
       shell: ./config --prefix=/usr/local/ssl chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
    
-    - name: change_openssl_ERLANG
+    - name: 变更openssl的Makefile
       shell: sed -i 's/DGHASH_ASM/DGHASH_ASM -fPIC/' Makefile  chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
    
-    - name: make_openssl_ERLANG
+    - name: make_openssl_ERLANG环境
       shell: make chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
    
-    - name: make_install_openssl_ERLANG
+    - name: make_install_openssl_ERLANG环境
       shell: make install chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
    
    ### Otp ###
-    - name: config_Otp
-      shell: CHOST="x86_64-pc-linux-gnu" CFLAGS="-march=nocona -O2 -pipe" CXXFLAGS="-march=nocona -O2 -pipe" chdir={{ Otp_tar_xf_dir }}/{{ Otp_packName }}/
+    - name: 配置Otp
+      shell: CHOST="x86_64-pc-linux-gnu" CFLAGS="-march=nocona -O2 -pipe" CXXFLAGS="-march=nocona -O2 -pipe" chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
    
     - name: config_otp
       shell: ./configure --enable-kernel-poll \ 
@@ -57,16 +57,16 @@
                          --enable-smp-support \
                          --enable-hipe        \
                          --with-ssl=/usr/local/ssl/ \
-                         chdir={{ Otp_tar_xf_dir }}/{{ Otp_packName }}/
+                         chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
    
     
     - name: make_otp
-      shell: make -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/{{ Otp_packName }}/
+      shell: make -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
     
     - name: make_install_otp
-      shell: make install -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/{{ Otp_packName }}/
+      shell: make install -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
    
-    - name: change_php.ini
+    - name: 变更php.ini配置
       shell: sed -i '736 i extension_dir = "/data/php/lib/php/extensions/no-debug-non-zts-20151012"' /data/php/etc/php.ini && \
              sed -i 's/;date.timezone =/date.timezone = PRC/' /data/php/etc/php.ini && \
              sed -i 's/short_open_tag = Off/short_open_tag = On/' /data/php/etc/php.ini 

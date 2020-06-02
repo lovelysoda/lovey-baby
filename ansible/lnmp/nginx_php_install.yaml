@@ -1,5 +1,5 @@
 ---
- - name: PHP_install
+ - name: PHP安装
    hosts: all
    user: root
    tags: PHP
@@ -7,24 +7,24 @@
    vars_files: 
     - var.yaml
    tasks: 
-    - name: create_group
+    - name: 创建用户组
       group: name={{ user }} 
 
-    - name: create_user
+    - name: 创建用户
       user: name={{ user }} shell=/sbin/nologin createhome=no group={{ user }}
 
     - yum: name="autoconf,bzip2,bzip2-devel,cmake,curl,curl-devel,e2fsprogs,e2fsprogs-devel,freetype,freetype-devel,gcc,gcc-c++,git,glibc,glibc-devel,gmp,gmp-devel,krb5-devel,libcurl,libcurl-devel,libidn,libidn-devel,libjpeg,libjpeg-devel,libmcrypt,libmcrypt-devel,libpng,libpng-devel,libtool-ltdl-devel,libxml2,libxml2-devel,libxslt,libxslt-devel,lrzsz,mysql-devel,ncurses,ncurses-devel,ntp,openldap,openldap-clients,openldap-devel,openldap-servers,openssl,openssl-devel,perl-CPAN,readline,readline-devel,screen,svn,unixODBC,unixODBC-devel,unzip"
 
-    - name: create_dir
+    - name: 创建日志目录
       file: path={{ log_dir }} state=directory owner={{ user }} group={{ group }}
-    - name: create_dir
+    - name: 创建PHP目录
       file: path={{ PHP_dir }} state=directory owner={{ user }} group={{ group }}
-    - name: create_dir
+    - name: 创建PHP解压目录
       file: path={{ PHP_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
-    - name: create_dir
+    - name: 创建PHP配置目录
       file: path={{ PHP_conf_dir }} state=directory owner={{ user }} group={{ group }}
 
-    - name: unarchive_tar
+    - name: 解压PHP至目标主机
       unarchive: src={{ PHP_pack }}/{{ PHP_packName }} dest={{ PHP_tar_xf_dir }}
 
 
@@ -74,39 +74,39 @@
     - name: make_install
       command: make install -j {{ ansible_processor_vcpus }}  chdir={{ PHP_tar_xf_dir }}/php-{{ PHP_version }}/ 
 
-    - name: Configuration_php.ini
+    - name: 复制php.ini至PHP配置目录
       command: \cp {{ PHP_tar_xf_dir }}/php-{{ PHP_version }}/php.ini-development {{ PHP_conf_dir }}/php.ini
 
-    - name: Configuration_php-fpm.conf
+    - name: 复制php-fpm.conf至PHP配置目录
       command: \cp {{ PHP_conf_dir }}/php-fpm.conf.default {{ PHP_conf_dir }}/php-fpm.conf
-    - name: Configuration_init_php-fpm
+    - name: 复制init.d.php-fpm至/etc/init.d
       command: \cp {{ PHP_tar_xf_dir }}/php-{{ PHP_version }}/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
-    - name: Configuration_www.conf
+    - name: 复制www.conf至PHP配置目录
       command: \cp {{ PHP_conf_dir }}/php-fpm.d/www.conf.default {{ PHP_conf_dir }}/php-fpm.d/www.conf
-    - name: Configuration_www.conf
+    - name: 变更www.conf配置
       command: sed -i.bak 's/9000/10080/' {{ PHP_conf_dir }}/php-fpm.d/www.conf
-    - name: Configuration_php.ini
+    - name: 变更php.ini配置
       command: sed -i.bak 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=1/' {{ PHP_conf_dir }}/php.ini
 
-    - name: php-fpm_start
+    - name: 创建php-fpm启动/停止/重启脚本且变更权限
       shell: echo "/etc/init.d/php-fpm start" > /root/fastcgi_start && \
              echo "/etc/init.d/php-fpm stop" > /root/fastcgi_stop && \
              echo "/etc/init.d/php-fpm restart" > /root/fastcgi_restart && \
              chmod 700 /root/fastcgi* && \
              chmod +x /etc/init.d/php-fpm
 
-    - name: php-fpm_autoStart
+    - name: 设置php-fpm开机自启
       shell: echo "/root/fastcgi_start" >> /etc/rc.local
 
     #php.ini,php软链接
-    - name: Configuration_php.ini_link
+    - name: 创建php.ini软链接
       file: src={{ PHP_conf_dir }}/php.ini dest=/etc/php.ini state=link
-    - name: Configuration_php_link
+    - name: 创建php命令软链接
       file: src={{ PHP_bin_dir }}/php dest=/bin/php state=link
-    - name: Configuration_php_link
+    - name: 创建php命令软链接
       file: src={{ PHP_bin_dir }}/php dest=/usr/bin/php state=link
 
- - name: Nginx_install
+ - name: Nginx安装
    hosts: all
    user: root
    gather_facts: true
@@ -114,24 +114,26 @@
    vars_files: 
     - var.yaml
    tasks: 
-    - name: create_group
+    - name: 创建用户组
       group: name={{ user }} 
 
-    - name: create_user
+    - name: 创建用户
       user: name={{ user }} shell=/sbin/nologin createhome=no group={{ user }}
-#    - yum: name="autoconf,bzip2,bzip2-devel,cmake,curl,curl-devel,e2fsprogs,e2fsprogs-devel,freetype,freetype-devel,gcc,gcc-c++,git,glibc,glibc-devel,gmp,gmp-devel,krb5-devel,libcurl,libcurl-devel,libidn,libidn-devel,libjpeg,libjpeg-devel,libmcrypt,libmcrypt-devel,libpng,libpng-devel,libtool-ltdl-devel,libxml2,libxml2-devel,libxslt,libxslt-devel,lrzsz,mysql-devel,ncurses,ncurses-devel,ntp,openldap,openldap-clients,openldap-devel,openldap-servers,openssl,openssl-devel,perl-CPAN,readline,readline-devel,screen,svn,unixODBC,unixODBC-devel,unzip"
+    - yum: name="autoconf,bzip2,bzip2-devel,cmake,curl,curl-devel,e2fsprogs,e2fsprogs-devel,freetype,freetype-devel,gcc,gcc-c++,git,glibc,glibc-devel,gmp,gmp-devel,krb5-devel,libcurl,libcurl-devel,libidn,libidn-devel,libjpeg,libjpeg-devel,libmcrypt,libmcrypt-devel,libpng,libpng-devel,libtool-ltdl-devel,libxml2,libxml2-devel,libxslt,libxslt-devel,lrzsz,mysql-devel,ncurses,ncurses-devel,ntp,openldap,openldap-clients,openldap-devel,openldap-servers,openssl,openssl-devel,perl-CPAN,readline,readline-devel,screen,svn,unixODBC,unixODBC-devel,unzip"
 
-    - name: create_dir
+    - name: 创建日志目录
+      file: path={{ log_dir }} state=directory owner={{ user }} group={{ group }}
+    - name: 创建Nginx配置目录
       file: path={{ Nginx_conf_dir }} state=directory owner={{ user }} group={{ group }}
-    - name: create_dir
+    - name: 创建Nginx软链接目录
       file: path={{ Nginx_link_conf_dir }} state=directory owner={{ user }} group={{ group }}
-    - name: create_dir
+    - name: 创建Nginx解压目录
       file: path={{ Nginx_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
-    - name: create_dir
+    - name: 创建Nginx软链接源目录
       file: path={{ Nginx_link_source }} state=directory owner={{ user }} group={{ group }}
 
 
-    - name: unarchive_tar
+    - name: 解压Nginx至目标主机
       unarchive: src={{ Nginx_pack }}/nginx-{{ Nginx_version }}.tar.gz dest={{ Nginx_tar_xf_dir }}
 
     - name: configure
@@ -149,19 +151,22 @@
     - name: make_install
       command: make install -j {{ ansible_processor_vcpus }} chdir={{ Nginx_tar_xf_dir }}/nginx-{{ Nginx_version }}/
 
-    - name: Nginx_link
+    - name: 创建Nginx子配置文件目录软链接
       file: src={{ Nginx_link_source }} dest={{ Nginx_link_conf_dir }}/vhost state=link
-#      file: src=/usr/local/lib/libpcre.so.1 dest=/lib64/ state=link
 
-    - name: Configuration_nginx.conf
+    - name: 创建libpcre软链接
+      file: src=/usr/local/lib/libpcre.so.1 dest=/lib64/ state=link
+      ignore_errors: True
+
+    - name: 复制nginx.conf(主配置文件)至目标主机
       copy: src={{ Nginx_pack }}/nginx.conf dest={{ Nginx_master_conf_dir }}/nginx.conf backup=yes force=yes
-    - name: Configuration_nginx_sy.conf
+    - name: 复制nginx_sy.conf(子配置文件)至目标主机
       copy: src={{ Nginx_pack }}/sy.conf dest={{ Nginx_conf_dir }}/sy.conf backup=yes
-    - name: Configuration_nginx_logrotate
+    - name: 复制nginx_logrotate(日志轮转文件)至目标主机
       copy: src={{ Nginx_pack }}/nginx dest=/etc/logrotate.d/nginx backup=yes
 
 
-    - name: nginx_start
+    - name: 创建Nginx启动/重启脚本且设置权限和启动Nginx
       shell: ulimit -SHn 65535 && \
              echo "/data/nginx/sbin/nginx" > /root/nginx_start && \
              echo "/data/nginx/sbin/nginx -t" > /root/nginx_reload && \
@@ -169,6 +174,6 @@
              chmod 700 /root/nginx* && \
              /data/nginx/sbin/nginx 
 
-    - name: nginx_autoStart
+    - name: 设置Nginx开机自启
       shell: echo "/data/nginx/sbin/nginx" >> /etc/rc.local && \
              chmod +x /etc/rc.d/rc.local

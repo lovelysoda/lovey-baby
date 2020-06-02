@@ -1,5 +1,4 @@
-/etc/ansible/playbooks
-├── Ansible-playbook.tar.gz
+/etc/ansible/playbook
 ├── erlang.yaml
 ├── Game_Service_version
 │   └── test.version
@@ -7,6 +6,7 @@
 ├── LNMP_start.sh
 ├── LNMP.yaml
 ├── mysql_install.yaml
+├── nginx_install.yaml
 ├── nginx_php_install.yaml
 ├── package
 │   ├── erlang
@@ -40,5 +40,3 @@
 │       └── file
 │           └── php-7.0.13.tar.gz
 └── var.yaml
-
-12 directories, 29 files
