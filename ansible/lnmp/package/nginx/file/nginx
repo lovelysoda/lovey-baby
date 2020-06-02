@@ -1,0 +1,11 @@
+#nginx log in /data/logs directory
+/data/logs/*.log
+{
+size 300M
+rotate 3
+compress
+sharedscripts
+postrotate
+    /root/nginx_reload
+endscript
+}
