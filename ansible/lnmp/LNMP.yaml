@@ -310,7 +310,7 @@
       shell: echo "/data/nginx/sbin/nginx" >> /etc/rc.local && \
              chmod +x /etc/rc.d/rc.local
 
-### MySQ 安装 ###
+### MySQL 安装 ###
  - name: MySQL安装
    hosts: all
    user: root
@@ -368,10 +368,6 @@
     - name: make_install
       command: make install chdir={{ MySQL_tar_xf_dir }}/mysql-{{ MySQL_version }}/
 
-    - name: 变更MySQL数据目录权限
-      shell: chmod +w {{ MySQL_data_dir }}
-    - name: 变更MySQL数据目录属组属主
-      shell: chown -R mysql:mysql {{ MySQL_data_dir }}
     - name: 创建MySQL命令软链接
       shell: ln -sf {{ MySQL_data_dir }}/bin/* /usr/bin/
     
@@ -384,14 +380,8 @@
     - name: 复制mysql.sh(启动脚本)至目标主机
       copy: src={{ MySQL_pack }}/mysql.sh dest={{ MySQL_data_dir }}/3306/mysql  backup=yes
 
-    - name: 变更MySQL(启动脚本)权限
-      shell: chmod +x {{ MySQL_data_dir }}/3306/mysql
-
     - name: 启动MySQL
       shell: /data/mysql/3306/mysql start
-
-    - name: 变更MySQL-sock目录属组属主
-      shell: chown -R mysql:mysql {{ MySQL_sock_dir }}
 
     - name: 创建MySQL-sock软链接
       shell: ln -sf /tmp/mysql.sock /var/lib/mysql/mysql.sock
@@ -400,8 +390,6 @@
       shell: echo "/data/mysql/3306/mysql start" > /root/mysql_start
     - name: 创建MySQL停止脚本
       shell: echo "/data/mysql/3306/mysql stop" > /root/mysql_stop
-    - name: 变更MySQL启动停止脚本权限
-      shell: chmod 700 /root/mysql*
     - name: 设置MySQL开机自启
       shell: echo "/root/mysql_start" >> /etc/rc.local
 
@@ -410,8 +398,25 @@
       shell: </dev/urandom tr -dc 0-9-A-Z-a-z|head -c ${1:-16} > {{ MySQL_save_dir }}/mysql_root
     - name: 获取MySQL-普通用户密码保存至存放密码目录
       shell: </dev/urandom tr -dc 0-9-A-Z-a-z|head -c ${1:-16} > {{ MySQL_save_dir }}/mysql_user
+
     - name: 变更存放密码目录权限
       shell: chmod -R 700 {{ MySQL_save_dir }}
+
+    - name: 变更MySQL(启动脚本)权限
+      shell: chmod +x {{ MySQL_data_dir }}/3306/mysql
+
+    - name: 变更MySQL数据目录权限
+      shell: chmod +w {{ MySQL_data_dir }}
+
+    - name: 变更MySQL-sock目录属组属主
+      shell: chown -R mysql:mysql {{ MySQL_sock_dir }}
+
+    - name: 变更MySQL数据目录属组属主
+      shell: chown -R mysql:mysql {{ MySQL_data_dir }}
+
+    - name: 变更MySQL启动停止脚本权限
+      shell: chmod 700 /root/mysql*
+
     - name: 修改MySQL-root密码
       shell: /bin/mysqladmin -u root password $(cat /data/save/mysql_root)
 ### admin ###
@@ -425,6 +430,7 @@
     - name: 创建root用户127.0.0.1登录
       shell: /usr/bin/mysql -u root -p$(cat /data/save/mysql_root) -e"GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY '$(cat /data/save/mysql_root)';"
 ### 添加用户 
+/root/fastcgi_start
     - name: 创建用户xge
       shell: /usr/bin/mysql -u root -p$(cat /data/save/mysql_root) -e"grant all privileges on *.* to 'xge'@'%' identified by '$(cat /data/save/mysql_root)';"
     - name: 移除用户xge部分权限
