@@ -310,7 +310,7 @@
       shell: echo "/data/nginx/sbin/nginx" >> /etc/rc.local && \
              chmod +x /etc/rc.d/rc.local
 
-### MySQL 安装 ###
+### MySQ 安装 ###
  - name: MySQL安装
    hosts: all
    user: root
@@ -380,6 +380,9 @@
     - name: 复制mysql.sh(启动脚本)至目标主机
       copy: src={{ MySQL_pack }}/mysql.sh dest={{ MySQL_data_dir }}/3306/mysql  backup=yes
 
+    - name: 变更MySQL(启动脚本)权限
+      shell: chmod +x {{ MySQL_data_dir }}/3306/mysql
+
     - name: 启动MySQL
       shell: /data/mysql/3306/mysql start
 
@@ -402,8 +405,6 @@
     - name: 变更存放密码目录权限
       shell: chmod -R 700 {{ MySQL_save_dir }}
 
-    - name: 变更MySQL(启动脚本)权限
-      shell: chmod +x {{ MySQL_data_dir }}/3306/mysql
 
     - name: 变更MySQL数据目录权限
       shell: chmod +w {{ MySQL_data_dir }}
@@ -430,7 +431,6 @@
     - name: 创建root用户127.0.0.1登录
       shell: /usr/bin/mysql -u root -p$(cat /data/save/mysql_root) -e"GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY '$(cat /data/save/mysql_root)';"
 ### 添加用户 
-/root/fastcgi_start
     - name: 创建用户xge
       shell: /usr/bin/mysql -u root -p$(cat /data/save/mysql_root) -e"grant all privileges on *.* to 'xge'@'%' identified by '$(cat /data/save/mysql_root)';"
     - name: 移除用户xge部分权限
