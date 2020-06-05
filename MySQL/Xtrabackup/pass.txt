@@ -1,0 +1,3 @@
+user=root
+pass=123456
+db=sy_test
