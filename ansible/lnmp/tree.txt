@@ -1,42 +1,50 @@
-/etc/ansible/playbook
-├── erlang.yaml
-├── Game_Service_version
-│   └── test.version
-├── init.yaml
-├── LNMP_start.sh
-├── LNMP.yaml
-├── mysql_install.yaml
-├── nginx_install.yaml
-├── nginx_php_install.yaml
+.
+├── game-lnmp
+│   ├── init.yaml
+│   ├── mysql_install.yaml
+│   ├── nginx_php_install.yaml
+│   ├── erlang.yaml
+│   └── go.yaml
+├── var.yaml
+├── web-lnmp
+│   ├── init.yaml
+│   ├── mysql_install.yaml
+│   ├── nginx_php_install.yaml
+│
 ├── package
-│   ├── erlang
-│   │   └── file
-│   │       ├── openssl-1.0.1j.tar.gz
-│   │       └── otp_src_20.1.tar.gz
-│   ├── init
-│   │   └── file
-│   │       ├── authorized_keys
-│   │       ├── clock
-│   │       ├── dets.sh
-│   │       ├── iptables
-│   │       ├── libmcrypt-2.5.7.tar.gz
-│   │       ├── LuaJIT.zip
-│   │       ├── safe-rm-0.8.tar.gz
-│   │       ├── servers.sql
-│   │       ├── sy_park.zip
-│   │       └── sysctl.conf
-│   ├── mysql
-│   │   └── file
-│   │       ├── my.cnf
-│   │       ├── mysql-boost-5.7.16.tar.gz
-│   │       └── mysql.sh
-│   ├── nginx
-│   │   └── file
-│   │       ├── nginx
-│   │       ├── nginx-1.17.10.tar.gz
-│   │       ├── nginx.conf
-│   │       └── sy.conf
-│   └── php
-│       └── file
-│           └── php-7.0.13.tar.gz
-└── var.yaml
+    ├── erlang
+    │   └── file
+    │       ├── otp_src_20.1.tar.gz
+    │       └── openssl-1.0.1j.tar.gz
+    ├── init
+    │   └── file
+    │       ├── supervisord.conf
+    │       ├── authorized_keys
+    │       ├── authorized_keys.bak
+    │       ├── dets.sh
+    │       ├── servers.sql
+    │       ├── libmcrypt-2.5.7.tar.gz
+    │       ├── sy_park.zip
+    │       ├── LuaJIT.zip
+    │       ├── safe-rm-0.8.tar.gz
+    │       ├── sysctl.conf
+    │       ├── clock
+    │       └── iptables
+    ├── mysql
+    │   └── file
+    │       ├── mysql.sh
+    │       ├── my.cnf
+    │       └── mysql-boost-5.7.16.tar.gz
+    ├── php
+    │   └── file
+    │       ├── php.ini
+    │       ├── phpredis.tar.gz
+    │       ├── php-7.0.13.tar.gz
+    │       ├── yar-2.0.5.tgz
+    │       └── msgpack-2.0.3.tgz
+    └── nginx
+        └── file
+            ├── nginx
+            ├── nginx.conf
+            ├── sy.conf
+            └── nginx-1.17.10.tar.gz
