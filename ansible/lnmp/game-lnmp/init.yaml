@@ -157,5 +157,8 @@
         sed -i 's/GSSAPIAuthentication yes/GSSAPIAuthentication no/' /etc/ssh/sshd_config && \
         sed -i 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
 
+    - name: 重启SSH服务
+      shell: systemctl restart sshd
+
     - name: 记录初始化完成时间
       shell: echo "init stop `date`" >> /tmp/time.txt
