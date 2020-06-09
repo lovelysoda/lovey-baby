@@ -19,7 +19,7 @@
     - name: 创建MySQL数据目录
       file: path={{ MySQL_data_dir }} state=directory owner={{ MySQL_user }} group={{ MySQL_group }}
     - name: 创建MySQL存放密码目录
-      file: path={{ MySQL_save_dir }} state=directory owner={{ MySQL_user }} group={{ MySQL_group }}
+      file: path={{ save_dir }} state=directory 
     - name: 创建MySQL解压目录
       file: path={{ MySQL_tar_xf_dir }} state=directory owner={{ MySQL_user }} group={{ MySQL_group }}
     - name: 创建MySQL-binlog目录
@@ -90,16 +90,16 @@
       shell: chmod 700 /root/mysql*
 
     - name: 获取MySQL-root用户密码保存至存放密码目录
-      shell: </dev/urandom tr -dc 0-9-A-Z-a-z|head -c ${1:-16} > {{ MySQL_save_dir }}/mysql_root
+      shell: </dev/urandom tr -dc 0-9-A-Z-a-z|head -c ${1:-16} > {{ save_dir }}/mysql_root
     - name: 获取MySQL-普通用户密码保存至存放密码目录
-      shell: </dev/urandom tr -dc 0-9-A-Z-a-z|head -c ${1:-16} > {{ MySQL_save_dir }}/mysql_user
+      shell: </dev/urandom tr -dc 0-9-A-Z-a-z|head -c ${1:-16} > {{ save_dir }}/mysql_user
 
     - name: 变更MySQL-sock目录属组属主
       shell: chown -R mysql:mysql {{ MySQL_sock_dir }}
     - name: 变更MySQL数据目录属组属主
       shell: chown -R mysql:mysql {{ MySQL_data_dir }}
     - name: 变更存放密码目录权限
-      shell: chmod -R 700 {{ MySQL_save_dir }}
+      shell: chmod -R 700 {{ save_dir }}
 
     - name: 修改MySQL-root密码
       shell: /bin/mysqladmin -u root password $(cat /data/save/mysql_root)

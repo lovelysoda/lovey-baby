@@ -1,0 +1,115 @@
+---
+- name: Erlang安装
+  hosts: all
+  user: root
+  gather_facts: true
+  tags: erlang
+  vars_files:
+    - /etc/ansible/playbooks/var.yaml
+  tasks:
+    - name: 创建Openssl解压目录
+      file: path={{ Openssl_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
+    - name: 创建Otp解压目录
+      file: path={{ Otp_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
+
+    - name: 解压openssl文件至目标主机
+      unarchive: src={{ Openssl_file }}/{{ Openssl_packName }} dest={{ Openssl_tar_xf_dir }}
+    - name: 解压otp文件至目标主机
+      unarchive: src={{ Openssl_file }}/{{ Otp_packName }} dest={{ Otp_tar_xf_dir }}
+    ### Openssl ###
+    - name: make_clean
+      shell: make clean chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+
+    - name: config_openssl_ERLANG环境
+      shell: ./config --prefix=/usr/local/ssl chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+
+    - name: 变更openssl的Makefile
+      shell: sed -i 's/DGHASH_ASM/DGHASH_ASM -fPIC/' Makefile  chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+
+    - name: make_openssl_ERLANG环境
+      shell: make chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+
+    - name: make_install_openssl_ERLANG环境
+      shell: make install chdir={{ Openssl_tar_xf_dir }}/openssl-{{ Openssl_version }}/
+
+    ### Otp ###
+    - name: 配置Otp
+      shell: CHOST="x86_64-pc-linux-gnu" CFLAGS="-march=nocona -O2 -pipe" CXXFLAGS="-march=nocona -O2 -pipe" chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
+
+    - name: config_otp
+      shell: ./configure --enable-kernel-poll \
+        --prefix=/data/erlang
+        --enable-threads     \
+        --enable-smp-support \
+        --enable-hipe        \
+        --with-ssl=/usr/local/ssl/ \
+        chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
+
+    - name: make_otp
+      shell: make -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
+
+    - name: make_install_otp
+      shell: make install -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
+
+    # - name: 变更php.ini配置
+    #   shell:
+    #     sed -i '736 i extension_dir = "/data/php/lib/php/extensions/no-debug-non-zts-20151012"' /data/php/etc/php.ini && \
+    #     sed -i 's/;date.timezone =/date.timezone = PRC/' /data/php/etc/php.ini && \
+    #     sed -i 's/short_open_tag = Off/short_open_tag = On/' /data/php/etc/php.ini
+
+- name: RabbitMQ 安装
+  hosts: all
+  user: root
+  gather_facts: true
+  tags: rabbitmq
+  vars_files:
+    - /etc/ansible/playbooks/var.yaml
+  tasks:
+    - name: 创建RabbitMQ组
+      group: name={{ RabbitMQ_group }}
+
+    - name: 创建RabbitMQ用户
+      user: name={{ RabbitMQ_user }} group={{ RabbitMQ_group }}
+
+    - name: 创建RabbitMQ解压目录
+      file: path={{ RabbitMQ_tar_xf_dir }} state=directory owner={{ RabbitMQ_user }} group={{ RabbitMQ_group }}
+
+    - name: 解压RabbitMQ文件至目标主机
+      unarchive: src={{ RabbitMQ_pack }}/{{ RabbitMQ_packName }} dest={{ RabbitMQ_tar_xf_dir }}
+
+    - name: 移动至数据目录
+      command: mv {{ RabbitMQ_tar_xf_dir }}/{{ RabbitMQ_version }} {{ RabbitMQ_data_dir }}
+
+    - name: 设置环境变量
+      shell: echo "ERL_HOME=/data/erlang"  >> /etc/bashrc && \
+        echo "RABBITMQ_HOME=/data/rabbitmq"  >> /etc/bashrc && \
+        echo "PATH=$PATH:$ERL_HOME/bin:/data/rabbitmq/sbin"  >> /etc/bashrc && \
+        echo "export ERL_HOME PATH RABBITMQ_HOME" >> /etc/bashrc
+
+    - name: 设置主机名
+      shell: echo "127.0.0.1 `hostname`" >> /etc/hosts
+
+    - name: 创建RabbitMQ启动脚本
+      shell: echo 'su - rabbitmq -c "rabbitmq-server -detached"' > /root/rabbitmq_start
+    - name: 创建RabbitMQ停止脚本
+      shell: echo "rabbitmqctl stop" > /root/rabbitmq_stop
+    - name: 设置RabbitMQ开机自启
+      shell: echo "/root/rabbitmq_start" >> /etc/rc.local
+    - name: 变更RabbitMQ启动停止脚本权限
+      shell: chmod 700 /root/rabbitmq*
+
+    - name: 变更RabbitMQ数据目录权限
+      shell: chmod +w {{ RabbitMQ_data_dir }}
+    - name: 变更RabbitMQ数据目录属组属主
+      shell: chown -R rabbitmq:rabbitmq {{ RabbitMQ_data_dir }}
+
+    - name: 获取RabbitMQ用户密码保存至存放密码目录
+      shell: </dev/urandom tr -dc 0-9-A-Z-a-z|head -c ${1:-16} > {{ save_dir }}/rabbitmq_admin
+
+    - name: 获取RabbitMQ用户密码保存至存放密码目录
+      shell: source /etc/profile
+
+    - name: 设置用户并设置权限
+      shell: rabbitmqctl add_user xlx $(cat {{ save_dir }}/rabbitmq_admin) && \
+        rabbitmqctl set_permissions -p / xlx ".*" ".*" ".*" && \
+        rabbitmqctl set_user_tags xlx administrator
