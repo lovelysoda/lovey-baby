@@ -104,6 +104,9 @@
     - name: 创建php命令软链接
       file: src={{ PHP_bin_dir }}/php dest=/usr/bin/php state=link
 
+    - name: 启动PHP-FPM
+      shell: /root/fastcgi_start
+
 - name: Nginx安装
   hosts: all
   user: root

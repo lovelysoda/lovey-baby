@@ -157,6 +157,24 @@
         sed -i 's/GSSAPIAuthentication yes/GSSAPIAuthentication no/' /etc/ssh/sshd_config && \
         sed -i 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
 
+    - name: 增加用户
+      shell: useradd shiyue && \
+             mkdir -p /home/shiyue/.ssh/ && \
+             chmod -R 700 /home/shiyue/.ssh/  
+
+    - name: 禁止root登录
+      shell: sed -i 's/#PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config 
+
+    - name: 复制authorized_keys至目标主机
+      copy: src={{ Init_file }}/authorized_keys dest=/home/shiyue/.ssh/ force=yes
+    
+    - name: 变更权限
+      shell: chmod -R 700 /home/shiyue/.ssh  &&  \
+             chown shiyue:shiyue -R /home/shiyue
+
+    - name: 设置用户权限
+      shell: echo 'shiyue ALL=(ALL) NOPASSWD':' ALL' >> /etc/sudoers
+
     - name: 重启SSH服务
       shell: systemctl restart sshd
 

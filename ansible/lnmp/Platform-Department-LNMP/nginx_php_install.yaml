@@ -128,6 +128,9 @@
     - name: 设置php-fpm开机自启
       shell: echo "/root/fastcgi_start" >> /etc/rc.local
 
+    - name: 启动PHP-FPM
+      shell: /root/fastcgi_start
+
     #php.ini,php软链接
     - name: 创建php.ini软链接
       file: src={{ PHP_conf_dir }}/php.ini dest=/etc/php.ini state=link

@@ -130,3 +130,6 @@
 
     - name: 将MySQL数据库的动态链接库共享至系统链接
       shell: echo "/data/mysql/lib" > /etc/ld.so.conf.d/mysql.conf
+
+    - name: 启动MySQL
+      shell: /data/mysql/3306/mysql start

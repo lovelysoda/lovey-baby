@@ -47,9 +47,11 @@
         echo "/boot" >> /etc/safe-rm.conf
 
     - name: 创建Openssl解压目录
-      file: path={{ Openssl_tar_xf_dir }} state=directory owner={{ user }} group={{ group }}
+      file: path={{ Openssl_tar_xf_dir }} state=directory
     - name: 解压openssl文件至目标主机
       unarchive: src={{ Openssl_file }}/{{ Openssl_packName }} dest={{ Openssl_tar_xf_dir }}
+
+
 
     - name: 创建SSH目录
       file: path={{  Init_SSH }} state=directory
@@ -158,8 +160,43 @@
         sed -i 's/GSSAPIAuthentication yes/GSSAPIAuthentication no/' /etc/ssh/sshd_config && \
         sed -i 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
 
+    - name: 增加用户
+      shell: useradd shiyue && \
+        mkdir -p /home/shiyue/.ssh/ && \
+        chmod -R 700 /home/shiyue/.ssh/
+
+    - name: 禁止root登录
+      shell: sed -i 's/#PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+
+    - name: 复制authorized_keys至目标主机
+      copy: src={{ Init_file }}/authorized_keys dest=/home/shiyue/.ssh/ force=yes
+
+    - name: 变更权限
+      shell: chmod -R 700 /home/shiyue/.ssh  &&  \
+        chown shiyue:shiyue -R /home/shiyue
+
+    - name: 设置用户权限
+      shell: echo 'shiyue ALL=(ALL) NOPASSWD':' ALL' >> /etc/sudoers
+
     - name: 重启SSH服务
       shell: systemctl restart sshd
 
     - name: 记录初始化完成时间
       shell: echo "init stop `date`" >> /tmp/time.txt
+
+---
+- name: 安装Node
+  hosts: all
+  user: root
+  tags: node
+  gather_facts: true
+  vars_files:
+    - /etc/ansible/playbooks/var.yaml
+  tasks:
+    ### Node install ###
+    - name: 创建Node解压目录
+      file: path={{ node_tar_xf_dir }} state=directory
+    - name: 解压Node文件至目标主机
+      unarchive: src={{ node_file }}/{{ node_packName }} dest={{ node_tar_xf_dir }}
+    - name: 安装Node
+      shell: ln -sf {{ node_tar_xf_dir }}/{{ node_version }}/bin/* /usr/bin/

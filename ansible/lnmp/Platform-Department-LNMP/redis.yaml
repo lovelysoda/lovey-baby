@@ -1,0 +1,56 @@
+---
+- name: Redis安装
+  hosts: all
+  user: root
+  tags: redis
+  gather_facts: true
+  vars_files:
+    - /etc/ansible/playbooks/var.yaml
+  tasks:
+    - name: 创建Redis组
+      group: name={{ Redis_group }}
+
+    - name: 创建Redis用户
+      user: name={{ Redis_user }} group={{ Redis_group }}
+    - yum: name="autoconf,bzip2,bzip2-devel,cmake,curl,curl-devel,e2fsprogs,e2fsprogs-devel,freetype,freetype-devel,gcc,gcc-c++,git,glibc,glibc-devel,gmp,gmp-devel,krb5-devel,libcurl,libcurl-devel,libidn,libidn-devel,libjpeg,libjpeg-devel,libmcrypt,libmcrypt-devel,libpng,libpng-devel,libtool-ltdl-devel,libxml2,libxml2-devel,libxslt,libxslt-devel,lrzsz,mysql-devel,ncurses,ncurses-devel,ntp,openldap,openldap-clients,openldap-devel,openldap-servers,openssl,openssl-devel,perl-CPAN,readline,readline-devel,screen,svn,unixODBC,unixODBC-devel,unzip"
+
+    - name: 创建Redis数据目录
+      file: path={{ Redis_data_dir }} state=directory owner={{ Redis_user }} group={{ Redis_group }}
+#    - name: 创建Redis存放密码目录
+#      file: path={{ Redis_save_dir }} state=directory owner={{ Redis_user }} group={{ Redis_group }}
+    - name: 创建Redis解压目录
+      file: path={{ Redis_tar_xf_dir }} state=directory owner={{ Redis_user }} group={{ Redis_group }}
+#   - name: 创建Redis配置目录
+#     file: path={{ Redis_conf_dir }} state=directory owner={{ Redis_user }} group={{ Redis_group }}
+
+    - name: 解压Redis至目标主机
+      unarchive: src={{ Redis_pack }}/{{ Redis_packName }} dest={{ Redis_tar_xf_dir }}
+
+    - name: make
+      command: make  chdir={{ Redis_tar_xf_dir }}/redis-{{ Redis_version }}/
+    - name: make_install
+      command: make install chdir={{ Redis_tar_xf_dir }}/redis-{{ Redis_version }}/
+
+    - name: Redis配置文件
+      shell: \cp  {{ Redis_tar_xf_dir }}/redis-{{ Redis_version }}/redis.conf  {{ Redis_conf_dir }}  && \
+        sed -i 's/daemonize no/daemonize yes/'  {{ Redis_conf_dir }}/redis.conf
+
+    - name: 创建Redis启动脚本
+      shell: echo 'su - redis -c "/usr/local/bin/redis-server /etc/redis/redis.conf"' > /root/redis_start
+    - name: 创建Redis停止脚本
+      shell: echo "redis-cli shutdown" > /root/redis_stop
+    - name: 设置Redis开机自启
+      shell: echo "/root/redis_start" >> /etc/rc.local
+    - name: 变更Redis启动停止脚本权限
+      shell: chmod 700 /root/redis*
+
+    - name: 移动至数据目录
+      command: mv {{ Redis_tar_xf_dir }}/redis-{{ Redis_version }} {{ Redis_data_dir }}
+
+    - name: 变更Redis数据目录权限
+      shell: chmod +w {{ Redis_data_dir }}
+    - name: 变更Redis数据目录属组属主
+      shell: chown -R redis:redis {{ Redis_data_dir }}
+
+    - name: 启动Redis
+      shell: /root/redis_start
