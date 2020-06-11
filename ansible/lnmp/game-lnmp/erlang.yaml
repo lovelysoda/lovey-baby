@@ -38,6 +38,7 @@
 
     - name: config_otp
       shell: ./configure --enable-kernel-poll \
+        --prefix={{ Otp_data_dir }}
         --enable-threads     \
         --enable-smp-support \
         --enable-hipe        \
@@ -49,6 +50,9 @@
 
     - name: make_install_otp
       shell: make install -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
+
+    - name: 配置软链接
+      shell: ln -s {{ Otp_data_dir }}/bin/* /usr/bin/
 
     - name: 变更php.ini配置
       shell:

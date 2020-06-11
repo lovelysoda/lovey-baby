@@ -20,8 +20,8 @@
 #      file: path={{ Redis_save_dir }} state=directory owner={{ Redis_user }} group={{ Redis_group }}
     - name: 创建Redis解压目录
       file: path={{ Redis_tar_xf_dir }} state=directory owner={{ Redis_user }} group={{ Redis_group }}
-#   - name: 创建Redis配置目录
-#     file: path={{ Redis_conf_dir }} state=directory owner={{ Redis_user }} group={{ Redis_group }}
+    - name: 创建Redis配置目录
+      file: path={{ Redis_conf_dir }} state=directory owner={{ Redis_user }} group={{ Redis_group }}
 
     - name: 解压Redis至目标主机
       unarchive: src={{ Redis_pack }}/{{ Redis_packName }} dest={{ Redis_tar_xf_dir }}

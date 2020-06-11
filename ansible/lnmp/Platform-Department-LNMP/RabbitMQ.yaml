@@ -38,7 +38,7 @@
 
     - name: config_otp
       shell: ./configure --enable-kernel-poll \
-        --prefix=/data/erlang
+        --prefix={{ Otp_data_dir }}
         --enable-threads     \
         --enable-smp-support \
         --enable-hipe        \
@@ -51,11 +51,14 @@
     - name: make_install_otp
       shell: make install -j  {{ ansible_processor_vcpus }} chdir={{ Otp_tar_xf_dir }}/otp_src_{{ Otp_version }}/
 
-    # - name: 变更php.ini配置
-    #   shell:
-    #     sed -i '736 i extension_dir = "/data/php/lib/php/extensions/no-debug-non-zts-20151012"' /data/php/etc/php.ini && \
-    #     sed -i 's/;date.timezone =/date.timezone = PRC/' /data/php/etc/php.ini && \
-    #     sed -i 's/short_open_tag = Off/short_open_tag = On/' /data/php/etc/php.ini
+    - name: 配置软链接
+      shell: ln -s {{ Otp_data_dir }}/bin/* /usr/bin/
+
+#    - name: 变更php.ini配置
+#      shell:
+#        sed -i '736 i extension_dir = "/data/php/lib/php/extensions/no-debug-non-zts-20151012"' /data/php/etc/php.ini && \
+#        sed -i 's/;date.timezone =/date.timezone = PRC/' /data/php/etc/php.ini && \
+#        sed -i 's/short_open_tag = Off/short_open_tag = On/' /data/php/etc/php.ini
 
 - name: RabbitMQ 安装
   hosts: all

@@ -2,7 +2,6 @@
 - log_dir: "/data/logs"
 - user: "www"
 - group: "www"
-- save_dir: "/data/save"
 #####################xxx_packName 用于寻找本地tar包 #############################
 #                                                                               #
 #                                                                               #
@@ -58,52 +57,29 @@
 - MySQL_sock_dir: "/var/lib/mysql"
 - MySQL_pack: "/etc/ansible/playbooks/package/mysql/file"
 - MySQL_tar_xf_dir: "/package/mysql"
+- MySQL_save_dir: "/data/save"
 - MySQL_DB: "sy_test"
 - MySQL_DBUser: "test"
 - MySQL_DBhosts: "%"
 
 ### Init vars ###
 - Init_Hostname: "129.sksy.com"
+- Init_safe_rm_packName: "safe-rm-0.8.tar.gz"
+- Init_safe_rm_version: "0.8"
 - Init_SSH: "/root/.ssh"
 - Init_file: "/etc/ansible/playbooks/package/init/file"
 - Init_iptables: "/etc/sysconfig/iptables"
 - Init_bashrc: "/root/.bashrc"
 - Init_clock: "/etc/sysconfig/clock"
 - Init_safe_rm_tar_xf_dir: "/package/safe-rm"
-- Init_safe_rm_packName: "safe-rm-0.8.tar.gz"
-- Init_safe_rm_version: "0.8"
-
-### node vars ###
-- node_file: "/etc/ansible/playbooks/package/node/file"
-- node_tar_xf_dir: "/package/node"
-- node_packName: "node-v12.18.0-linux-x64.tar.xz"
-- node_version: "node-v12.18.0-linux-x64"
 
 ### Openssl install vars ###
 - Openssl_file: "/etc/ansible/playbooks/package/erlang/file"
+#- Openssl_tar_xf_dir: "/package/openssl"
 - Openssl_tar_xf_dir: "/package/openssl"
+#- Otp_tar_xf_dir: "/package/otp"
+- Otp_tar_xf_dir: "/package/otp"
 - Openssl_packName: "openssl-1.0.1j.tar.gz"
 - Openssl_version: "1.0.1j"
-- Otp_tar_xf_dir: "/package/otp"
-- Otp_packName: "otp_src_22.3.tar.gz"
-- Otp_version: "22.3"
-- Otp_data_dir: "/data/erlang"
-
-### Redis install vars ###
-- Redis_version: "5.0.0"
-- Redis_packName: "redis-5.0.0.tar.gz"
-- Redis_user: "redis"
-- Redis_group: "redis"
-- Redis_data_dir: "/data/redis"
-- Redis_pack: "/etc/ansible/playbooks/package/redis/file"
-- Redis_tar_xf_dir: "/package/redis"
-- Redis_conf_dir: "/etc/redis"
-
-### RabbitMQ install vars ###
-- RabbitMQ_version: "rabbitmq_server-3.8.3"
-- RabbitMQ_packName: "rabbitmq-server-generic-unix-3.8.3.tar.xz"
-- RabbitMQ_user: "rabbitmq"
-- RabbitMQ_group: "rabbitmq"
-- RabbitMQ_data_dir: "/data/rabbitmq"
-- RabbitMQ_pack: "/etc/ansible/playbooks/package/rabbitmq/file"
-- RabbitMQ_tar_xf_dir: "/package/rabbitmq"
+- Otp_packName: "otp_src_20.1.tar.gz"
+- Otp_version: "20.1"

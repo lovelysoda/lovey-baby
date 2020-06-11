@@ -11,6 +11,9 @@
       shell: echo "init start `date`" > /tmp/time.txt
     - yum: name="autoconf,bzip2,bzip2-devel,cmake,curl,curl-devel,e2fsprogs,e2fsprogs-devel,freetype,freetype-devel,gcc,gcc-c++,git,glibc,glibc-devel,gmp,gmp-devel,krb5-devel,libcurl,libcurl-devel,libidn,libidn-devel,libjpeg,libjpeg-devel,libmcrypt,libmcrypt-devel,libpng,libpng-devel,libtool-ltdl-devel,libxml2,libxml2-devel,libxslt,libxslt-devel,lrzsz,mysql-devel,ncurses,ncurses-devel,ntp,openldap,openldap-clients,openldap-devel,openldap-servers,openssl,openssl-devel,perl-CPAN,readline,readline-devel,screen,svn,unixODBC,unixODBC-devel,unzip"
 
+    - name: yum update
+      shell: yum install -y unzip glibc glibc-devel
+
     - name: 检查DNS地址
       shell: host www.sina.com.cn ; echo $?
       register: result
@@ -122,7 +125,7 @@
 
     - name: 变更supervisor配置
       shell: sed -i '$a[include]' /etc/supervisor/supervisord.conf && \
-        sed -i '$afiles = ./conf.d/*.ini' /etc/supervisor/supervisord.conf && \
+        sed -i '$afiles = ./conf.d/*.ini' /etc/supervisor/supervisord.conf 
     - name: 复制supervisord.conf文件至目标主机
       copy: src={{ Init_file | quote  }}/supervisord.conf dest=/etc/supervisor/  force=yes
 
