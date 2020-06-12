@@ -1,0 +1,51 @@
+filebeat.modules:
+- module: elasticsearch
+  server:
+    enabled: true
+  audit:
+    enabled: true
+  slowlog:
+    enabled: true
+  deprecation:
+    enabled: true
+- module: kafka
+  log:
+    enabled: true
+- module: kibana
+  log:
+    enabled: true
+- module: osquery
+  result:
+    enabled: true
+setup.ilm.enabled: false
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/shiyue.log
+    #- /var/log/shiyue.log
+  fields:
+    doc_type: {{ type_name }}
+#filebeat.config.modules:
+#  path: ${path.config}/modules.d/*.yml
+#  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 1
+setup.kibana:
+setup.template.name: "secure-login"   
+setup.template.pattern: "secure-login" 
+output.elasticsearch:
+  hosts: ["{{ elasticsearch_server }}"]
+  index: "{{ type_name }}-%{+yyyy.MM.dd}"
+  username: "{{ username }}"
+  password: "{{ passwd }}"
+  json.keys_under_root: true
+  json.message_key:
+  tail_files: true
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata: ~
+  - drop_fields:
+      fields: ["beat.hostname", "beat.name","beat.version","offset","source","prospector.type","ecs.version","agent.ephemeral_id","agent.id","agent.type","agent.version","agent.hostname","log.file.path","log.offset","input.type"]

@@ -1,0 +1,51 @@
+- name: Install and configure the filebeat
+  hosts: test
+  vars:
+    conf_file: /etc/filebeat/filebeat.yml
+    type_name: secure-login
+    elasticsearch_server: xxx:9200
+    filebeat_version: filebeat-7.6.2-x86_64.rpm
+    passwd: xxx
+    username: xxx
+  tasks:
+    - name: 变更rsyslog配置
+      shell: |
+        echo "local3.* /var/log/shiyue.log" >> /etc/rsyslog.conf
+      notify: restart rsyslog
+
+    - name: 变更/etc/profile配置文件
+      shell: |
+        echo 'IP=$(echo "`who am i`"| awk '\''{print $NF}'\'')' >>/etc/profile
+        echo 'Local_IP=$(ip a|grep  "inet"|egrep "eno|enp|eth"|awk '\''{print $2}'\''|head -1)' >>/etc/profile
+    - name: 变更/etc/profile配置文件
+      shell: |
+        grep HISTTIMEFORMAT -q  /etc/bashrc && \
+        echo "export PROMPT_COMMAND='{ msg=\$(history 1 | { read x y z j; echo \$j; });logger -p local3.notice "\"'[hostname]:$(hostname)'\"":  "\"'[euid]:$(whoami)'\$IP"\":  "\"'[IP]:$Local_IP'"\":  "\"'[$(pwd)]: $msg'"\"; }'" >> /etc/profile  || \
+        echo "export PROMPT_COMMAND='{ msg=\$(history 1 | { read x y; echo \$y; });logger -p local3.notice "\"'[hostname]:$(hostname)'\"":  "\"'[euid]:$(whoami)'\$IP"\": "\"'[IP]:$Local_IP'"\":  "\"'[$(pwd)]: $msg'"\"; }'" >> /etc/profile
+
+    # - name: 替换/etc/profile配置文件
+    #   copy: >
+    #     src=files/profile
+    #     dest=/etc/profile mode=644
+
+    - name: copy filebeat to destination
+      copy: >
+        src=files/{{ filebeat_version }}
+        dest=/usr/local/src/{{ filebeat_version }}
+
+    - name: yum install filebeat
+      yum: name=/usr/local/src/{{ filebeat_version }} state=present
+
+    - name: copy filebeat.yml
+      template: src=templates/filebeat-secure-login.yml dest={{ conf_file }}
+      notify: restart filebeat
+
+    - name: 生成shiyue.log审计日志
+      shell: |
+        source /etc/profile
+
+  handlers:
+    - name: restart filebeat
+      service: name=filebeat state=restarted
+    - name: restart rsyslog
+      service: name=rsyslog state=restarted
