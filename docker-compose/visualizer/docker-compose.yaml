@@ -1,0 +1,10 @@
+version: "3"
+services: 
+  visualizer:
+    image: "dockersamples/visualizer"
+    container_name: "visualizer"
+    restart: "always"
+    volumes: 
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    ports:
+      - "8080:8080"
