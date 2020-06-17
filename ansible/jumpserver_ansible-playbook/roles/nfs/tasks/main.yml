@@ -1,0 +1,42 @@
+---
+
+- name: install nfs-utils rpcbind
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nfs-utils
+    - rpcbind
+
+- name: enable nfs-server automatic start
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - rpcbind
+    - nfs-server
+    - nfs-lock
+    - nfs-idmap
+
+- name: enable nfs-server firewalld
+  firewalld:
+    zone: public
+    service: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - nfs
+    - mountd
+    - rpc-bind
+  when:
+    - enable_firewalld|default(false)
+
+- name: create directory {{ nfs_src_dir }}
+  file:
+    path: "{{ nfs_src_dir }}"
+    state: directory
+    mode: '0755'
+  notify:
+    - set nfs perm

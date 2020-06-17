@@ -1,0 +1,14 @@
+---
+
+- name: extract luna
+  unarchive:
+    src: "{{ install_dir }}/luna.tar.gz"
+    dest: "{{ nfs_dest_dir }}"
+    copy: no
+
+- name: restart nginx
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - nginx

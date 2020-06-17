@@ -1,0 +1,161 @@
+---
+
+- name: install git gcc
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - gcc
+    - git
+    - libselinux-python
+    - libsemanage-python
+
+- firewalld:
+    rich_rule: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - 'rule family=ipv4 source address="{{ jms_network }}" port protocol=tcp port=80 accept'
+  when:
+    - enable_firewalld|default(false)
+
+- seboolean:
+    name: "{{ item }}"
+    state: yes
+    persistent: yes
+  loop:
+    - httpd_can_network_connect
+  when:
+    - enable_selinux|default(false)
+
+- name: install python36
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - python36
+    - python36-devel
+
+- name: copy file to core
+  copy:
+    src: "{{ item }}"
+    dest: "{{ install_dir }}"
+    mode: '0755'
+  loop:
+    - "{{ downloads_dir }}/jumpserver.tar.gz"
+  notify:
+    - extract core
+
+- meta: flush_handlers
+
+- name: create pip directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - /root/.pip
+
+- name: copy pypi mirrors file
+  copy:
+    src: "{{ downloads_dir }}/{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { src: pip.conf, dest: /root/.pip/pip.conf }
+    - { src: .pydistutils.cfg, dest: /root/.pydistutils.cfg }
+
+- name: install nfs-utils
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nfs-utils
+
+- name: mount nfs data directory
+  mount:
+    fstype: nfs
+    opts: rw
+    src: "{{ groups['nfs'][0] }}:{{ nfs_src_dir }}"
+    path: "{{ nfs_dest_dir }}"
+    state: mounted
+
+- name: install core requirement
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - krb5-devel
+    - libtiff-devel
+    - libjpeg-devel
+    - libzip-devel
+    - freetype-devel
+    - lcms2-devel
+    - libwebp-devel
+    - tcl-devel
+    - tk-devel
+    - sshpass
+    - openldap-devel
+    - mariadb-devel
+    - libffi-devel
+    - openssh-clients
+    - telnet
+    - openldap-clients
+
+- shell: "/usr/bin/python3.6 -m venv {{ install_dir }}/py3"
+- shell: "{{ install_dir }}/py3/bin/pip install wheel"
+- shell: "{{ install_dir }}/py3/bin/pip install -U pip setuptools"
+- shell: "{{ install_dir }}/py3/bin/pip install -r {{ install_dir }}/jumpserver/requirements/requirements.txt"
+
+- name: copy core conf file
+  template:
+    src: "{{ item }}"
+    dest: "{{ install_dir }}/jumpserver/config.yml"
+  loop:
+    - config.yml.j2
+
+- name: copy service file
+  template:
+    src: "{{ item }}"
+    dest: "/lib/systemd/system/jms_core.service"
+  loop:
+    - jms_core.service.j2
+  notify:
+    - reload systemd
+
+- name: start core automatic start
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - jms_core
+
+- name: copy tengine to core
+  copy:
+    src: "{{ item }}"
+    dest: "{{ install_dir }}/"
+  loop:
+    - "{{ downloads_dir }}/{{ tengine_name }}"
+
+- name: install tengine-server
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "{{ install_dir }}/{{ tengine_name }}"
+
+- name: remove nginx default conf
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/nginx/conf.d/default.conf
+
+- name: copy nginx conf
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { src: jumpserver.conf.j2, dest: /etc/nginx/conf.d/jumpserver.conf }
+  notify:
+    - restart nginx

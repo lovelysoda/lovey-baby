@@ -1,0 +1,50 @@
+---
+
+- name: install epel wget
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - epel-release
+    - wget
+
+- name: copy mirrors scripts
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { src: 'scripts/set_mirrors.sh', dest: '/tmp/set_mirrors.sh' }
+  notify:
+    - set mirrors
+
+- meta: flush_handlers
+
+- name: check ntp ntpdate install
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - ntp
+    - ntpdate
+
+- name: check ntpd stopped
+  service:
+    name: "{{ item }}"
+    state: stopped
+  loop:
+    - ntpd
+  when:
+    - ntp_server is defined
+
+- name: set ntp {{ ntp_server }}
+  shell: ntpdate {{ ntp_server }}
+  when: ntp_server is defined
+
+- name: check ntpd started
+  service:
+    name: "{{ item }}"
+    state: started
+  loop:
+    - ntpd
+  when:
+    - ntp_server is defined

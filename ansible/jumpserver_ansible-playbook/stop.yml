@@ -1,0 +1,100 @@
+---
+
+- hosts: guacamole
+  tasks:
+    - name: stop guacamole by docker
+      docker_container:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - jms_guacamole
+
+    - name: wait guacamole port down
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ guacamole_http_port }}"
+        state: stopped
+        msg: "the guacamole port is not down"
+
+- hosts: koko
+  tasks:
+    - name: stop koko by docker
+      docker_container:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - jms_koko
+
+    - name: wait koko ssh port down
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ koko_ssh_port }}"
+        state: stopped
+        msg: "the koko ssh port is not down"
+
+    - name: wait koko ws port down
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ koko_ws_port }}"
+        state: stopped
+        msg: "the koko ws port is not down"
+
+- hosts: core_slave
+  tasks:
+    - name: stop slave core by systemd
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - jms_core
+
+    - name: wait slave core http port down
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_http_port }}"
+        state: stopped
+        msg: "the slave core http port is not down"
+
+    - name: wait slave core ws port down
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_ws_port }}"
+        state: stopped
+        msg: "the slave core ws port is not down"
+
+    - name: wait slave core celery port down
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_celery_port }}"
+        state: stopped
+        msg: "the slave core celery port is not down"
+
+- hosts: core_master
+  tasks:
+    - name: stop master core by systemd
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - jms_core
+
+    - name: wait master core http port down
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_http_port }}"
+        state: stopped
+        msg: "the master core http port is not down"
+
+    - name: wait master core ws port down
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_ws_port }}"
+        state: stopped
+        msg: "the master core ws port is not down"
+
+    - name: wait master core celery port down
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_celery_port }}"
+        state: stopped
+        msg: "the master core celery port is not down"

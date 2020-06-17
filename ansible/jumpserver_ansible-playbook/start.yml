@@ -1,0 +1,246 @@
+---
+
+- hosts: nfs
+  tasks:
+    - name: start nfs server
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - rpcbind
+        - nfs-server
+        - nfs-lock
+        - nfs-idmap
+
+- hosts: mariadb
+  tasks:
+    - name: start mariadb server
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - mariadb
+
+    - name: wait mariadb port is up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ item }}"
+        state: started
+        timeout: 10
+        msg: "the mariadb port {{ item }} is not up"
+      loop:
+        - "3306"
+
+- hosts: redis
+  tasks:
+    - name: start redis server
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - redis
+
+    - name: wait redis port is up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ item }}"
+        state: started
+        timeout: 10
+        msg: "the redis port {{ item }} is not up"
+      loop:
+        - "6379"
+
+- hosts: nginx
+  tasks:
+    - name: start nginx server
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - nginx
+
+    - name: wait nginx port is up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ item }}"
+        state: started
+        timeout: 10
+        msg: "the redis port {{ item }} is not up"
+      loop:
+        - "{{ http_port }}"
+
+- hosts: core_master
+  tasks:
+    - name: start core master server
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - jms_core
+
+    - name: wait master core http port up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_http_port }}"
+        state: started
+        timeout: 30
+        msg: "the master core http port is not up"
+
+    - name: wait master core ws port up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_ws_port }}"
+        state: started
+        timeout: 30
+        msg: "the master core ws port is not up"
+
+    - name: wait master core celery port up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_celery_port }}"
+        state: started
+        timeout: 30
+        msg: "the master core celery port is not up"
+
+    - name: wait master core status page is available
+      uri:
+        url: "{{ item }}"
+        return_content: yes
+      register: core_http_result
+      until: core_http_result.status == 200
+      retries: 12
+      delay: 5
+      loop:
+        - http://localhost/api/health/
+
+    - name: wait master core status page is available
+      uri:
+        url: "{{ item }}"
+        return_content: yes
+      register: core_http_result
+      until: core_http_result.status == 200
+      retries: 12
+      delay: 5
+      loop:
+        - http://localhost/api/health/
+
+- hosts: core_slave
+  tasks:
+    - name: start core slave server
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - jms_core
+
+    - name: wait slave core http port up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_http_port }}"
+        state: started
+        timeout: 30
+        msg: "the slave core http port is not up"
+
+    - name: wait slave core ws port up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_ws_port }}"
+        state: started
+        timeout: 30
+        msg: "the slave core ws port is not up"
+
+    - name: wait slave core celery port up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ core_celery_port }}"
+        state: started
+        timeout: 30
+        msg: "the slave core celery port is not up"
+
+    - name: wait slave core status page is available
+      uri:
+        url: "{{ item }}"
+        return_content: yes
+      register: core_http_result
+      until: core_http_result.status == 200
+      retries: 12
+      delay: 5
+      loop:
+        - http://localhost/api/health/
+
+- hosts: koko
+  tasks:
+    - name: start docker server
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - docker
+
+    - name: start koko by docker
+      docker_container:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - jms_koko
+
+    - name: wait koko ssh port up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ koko_ssh_port }}"
+        state: started
+        timeout: 10
+        msg: "the koko ssh port is not up"
+
+    - name: wait koko ws port up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ koko_ws_port }}"
+        state: started
+        timeout: 10
+        msg: "the koko ws port is not up"
+
+- hosts: guacamole
+  tasks:
+    - name: start docker server
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - docker
+
+    - name: start guacamole by docker
+      docker_container:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - jms_guacamole
+
+    - name: wait guacamole port up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ guacamole_http_port }}"
+        state: started
+        timeout: 10
+        msg: "the guacamole port is not up"
+
+- hosts: nginx
+  tasks:
+
+    - name: check internal http status page is available
+      uri:
+        url: "http://localhost:{{ http_port }}/api/health/"
+        return_content: yes
+      register: core_http_result
+      until: core_http_result.status == 200
+      retries: 12
+      delay: 5
+
+    - name: check external http status page is available
+      uri:
+        url: "http://{{ ansible_host }}:{{ http_port }}/api/health/"
+        return_content: yes
+      register: core_http_result
+      until: core_http_result.status == 200
+      retries: 12
+      delay: 5

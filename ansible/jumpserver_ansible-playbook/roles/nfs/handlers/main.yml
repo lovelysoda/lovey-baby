@@ -1,0 +1,4 @@
+---
+
+- name: set nfs perm
+  shell: echo "{{ nfs_src_dir }} {{ nfs_perm }}" > /etc/exports && exportfs -a

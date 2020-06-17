@@ -1,0 +1,65 @@
+---
+
+- name: create downloads directories
+  file:
+    path: "{{ downloads_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: download core luna
+  get_url:
+    url: "http://demo.jumpserver.org/download/{{ item }}/{{ jms_version }}/{{ item }}.tar.gz"
+    dest: "{{ downloads_dir }}/{{ item }}.tar.gz"
+    checksum: "{{ item.checksum | default(omit) }}"
+    force: yes
+    validate_certs: no
+  register: get_url_result
+  until: "'OK' in get_url_result.msg or 'file already exists' in get_url_result.msg"
+  retries: 4
+  delay: "{{ retry_stagger | random + 3 }}"
+  loop:
+    - jumpserver
+    - luna
+
+- name: download tengine-server
+  get_url:
+    url: "http://demo.jumpserver.org/download/centos/7/{{ item }}"
+    dest: "{{ downloads_dir }}/{{ item }}"
+    checksum: "{{ item.checksum | default(omit) }}"
+    force: yes
+    validate_certs: no
+  register: get_url_result
+  until: "'OK' in get_url_result.msg or 'file already exists' in get_url_result.msg"
+  retries: 4
+  delay: "{{ retry_stagger | random + 3 }}"
+  loop:
+    - "{{ tengine_name }}"
+
+- name: download pip mirrors
+  get_url:
+    url: "http://demo.jumpserver.org/download/pypi/{{ item }}"
+    dest: "{{ downloads_dir }}/{{ item }}"
+    checksum: "{{ item.checksum | default(omit) }}"
+    force: yes
+    validate_certs: no
+  register: get_url_result
+  until: "'OK' in get_url_result.msg or 'file already exists' in get_url_result.msg"
+  retries: 4
+  delay: "{{ retry_stagger | random + 3 }}"
+  loop:
+    - pip.conf
+    - .pydistutils.cfg
+
+- name: download pip mirrors
+  get_url:
+    url: "http://demo.jumpserver.org/download/docker/{{ item }}"
+    dest: "{{ downloads_dir }}/{{ item }}"
+    checksum: "{{ item.checksum | default(omit) }}"
+    force: yes
+    validate_certs: no
+  register: get_url_result
+  until: "'OK' in get_url_result.msg or 'file already exists' in get_url_result.msg"
+  retries: 4
+  delay: "{{ retry_stagger | random + 3 }}"
+  loop:
+    - daemon.json

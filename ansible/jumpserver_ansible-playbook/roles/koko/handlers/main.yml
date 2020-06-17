@@ -1,0 +1,11 @@
+- name: yum-clean-metadata
+  command: yum clean metadata
+  args:
+    warn: no
+
+- name: restart docker
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - docker

@@ -1,0 +1,11 @@
+---
+
+- name: set redis scripts
+  shell: sh /tmp/set_redis.sh
+
+- name: restart redis
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - redis

@@ -1,0 +1,4 @@
+---
+
+- name: set mirrors
+  shell: sh /tmp/set_mirrors.sh

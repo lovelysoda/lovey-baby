@@ -1,0 +1,68 @@
+---
+
+- name: install mariadb-server
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - mariadb
+    - mariadb-devel
+    - mariadb-server
+    - python2-PyMySQL
+  when:
+    - enable_mysql|default(false)
+
+- name: enable mariadb automatic start
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - mariadb
+  when:
+    - enable_mysql|default(false)
+
+- firewalld:
+    rich_rule: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - 'rule family=ipv4 source address="{{ jms_network }}" port protocol=tcp port=3306 accept'
+  when:
+    - enable_firewalld|default(false)
+    - enable_mysql|default(false)
+
+- name: remove anonymous user
+  mysql_user:
+    name: ''
+    host_all: yes
+    state: absent
+  when:
+    - enable_mysql|default(false)
+
+- name: dalete database test
+  mysql_db:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - test
+  when:
+    - enable_mysql|default(false)
+
+- name: create database {{ db_name }}
+  mysql_db:
+    name: "{{ db_name }}"
+    encoding: utf8
+  when:
+    - enable_mysql|default(false)
+
+- name: create user {{ db_user }}
+  mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_passwd }}"
+    priv: "{{ db_name }}.*:ALL"
+    host: "%"
+    state: present
+  when:
+    - enable_mysql|default(false)

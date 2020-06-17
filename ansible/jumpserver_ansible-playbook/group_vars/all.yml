@@ -1,0 +1,18 @@
+---
+
+retry_stagger: 5
+
+downloads_dir: "{{ playbook_dir }}/downloads"
+
+tengine_name: tengine-2.3.2-1.el7.ngx.x86_64.rpm
+
+pip_mirrors: https://mirrors.aliyun.com/pypi/simple/
+
+core_http_port: 8080
+core_ws_port: 8070
+core_celery_port: 5555
+
+koko_ssh_port: 2222
+koko_ws_port: 5000
+
+guacamole_http_port: 8081

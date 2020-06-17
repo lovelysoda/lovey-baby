@@ -1,0 +1,85 @@
+---
+
+- name: install docker prepare
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - yum-utils
+    - device-mapper-persistent-data
+    - lvm2
+    - python2-pip
+
+- firewalld:
+    rich_rule: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop:
+    - 'rule family=ipv4 source address="{{ jms_network }}" port protocol=tcp port="{{ koko_ssh_port }}" accept'
+    - 'rule family=ipv4 source address="{{ jms_network }}" port protocol=tcp port="{{ koko_ws_port }}" accept'
+  when:
+    - enable_firewalld|default(false)
+
+- name: add docker repository
+  yum_repository:
+    name: docker-ce
+    description: Docker CE Stable - $basearch
+    baseurl: https://mirrors.aliyun.com/docker-ce/linux/centos/7/$basearch/stable
+    gpgcheck: no
+    enabled: 1
+  notify: yum-clean-metadata
+
+- name: install docker-ce
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - docker-ce
+
+- name: create docker directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - /etc/docker
+
+- name: copy docker mirrors file
+  copy:
+    src: "{{ downloads_dir }}/{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { src: daemon.json, dest: /etc/docker/daemon.json }
+  notify:
+    - restart docker
+
+- meta: flush_handlers
+
+- name: enable docker automatic start
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - docker
+
+- pip:
+    name: "{{ item }}"
+    extra_args: -i {{ pip_mirrors }}
+  loop:
+    - docker-py
+
+- name: create koko container
+  docker_container:
+    name: jms_koko
+    image: "jumpserver/jms_koko:{{ jms_version }}"
+    state: started
+    ports:
+      - "2222:2222"
+      - "5000:5000"
+    env:
+      CORE_HOST: "http://{{ nginx_server }}"
+      BOOTSTRAP_TOKEN: "{{ bootstrap_token }}"
+      REDIS_HOST: "{{ redis_host }}"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "{{ redis_passwd }}"

@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+set -e
+
+if [ ! -f /etc/redis.conf ]; then
+  exit 1
+fi
+
+sed -i "s/bind 127.0.0.1/bind 0.0.0.0/g" /etc/redis.conf
+
+if [ ! "$(cat /etc/redis.conf | grep -v ^\# | grep maxmemory-policy)" ]; then
+  sed -i "561i maxmemory-policy allkeys-lru" /etc/redis.conf
+fi
+
+if [ ! "$(cat /etc/redis.conf | grep -v ^\# | grep requirepass)" ]; then
+  sed -i "481i requirepass {{ redis_passwd }}" /etc/redis.conf
+else
+  sed -i "s/requirepass .*/requirepass {{ redis_passwd }} /g" /etc/redis.conf
+fi
